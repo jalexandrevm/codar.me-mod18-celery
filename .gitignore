@@ -1,0 +1,10 @@
+venv
+__pycache__
+db.sqlite3
+.env
+sqldiff.exe
+sqlite3_analyzer.exe
+sqlite3.exe
+*.log
+app.log
+.pytest_cache
