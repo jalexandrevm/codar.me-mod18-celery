@@ -1,5 +1,7 @@
+import csv
 from datetime import datetime, timedelta, timezone
-from django.http import JsonResponse
+from urllib import response
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework import generics
@@ -7,7 +9,7 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from agenda.libs.brasil_api import get_cep, is_cep
 import json
 
@@ -17,6 +19,7 @@ from agenda.serializers import (
     EnderecoSerializer,
     PrestadorSerializer,
 )
+from agenda.tasks import gera_relatorio_prestador
 from agenda.utils import (
     data_str_to_datetime_list,
     get_horarios_disponiveis,
@@ -82,20 +85,19 @@ def user_create(request):
         name = request.data["username"]
         pass_word = request.data["password"]
         email = request.data["email"]
-        if name and pass_word and email:
-            usr_obj = User()
-            usr_obj.username = name
-            usr_obj.email = email
-            usr_obj.set_password(pass_word)
-            usr_seriado = PrestadorSerializer(usr_obj)
+        if (name != None) and (pass_word != None) and (email != None):
+            usr_data = {
+                "username": name,
+                "password": pass_word,
+                "email": email,
+            }
+            usr_seriado = PrestadorSerializer(data=usr_data)
             if usr_seriado.is_valid():
                 usr_seriado.save()
                 return JsonResponse(usr_seriado.data, status=201)
-        seriado_erro = PrestadorSerializer(request.data)
+        seriado_erro = PrestadorSerializer(data=request.data)
         seriado_erro.is_valid()
         return JsonResponse(seriado_erro.errors, status=400)
-        pass
-    pass
 
 
 @api_view(http_method_names=["GET"])
@@ -128,17 +130,37 @@ def prestador_endereco_create(request, pk):
         return JsonResponse(end_seriado.errors, status=400)
 
 
-class PrestadorList(generics.ListAPIView):
-    serializer_class = PrestadorSerializer
-    queryset = User.objects.all()
-    permission_classes = [IsSuperUserOnly]
+@api_view(http_method_names=["GET"])
+@permission_classes([permissions.IsAdminUser])
+def get_relatorio_prestador(request):
+    if request.query_params.get("formato") == "csv":
+        # response = HttpResponse(
+        #     content_type="text/csv",
+        #     headers={
+        #         "Content-Disposition": f'attachment; filename="relatorio_{datetime.utcnow().strftime("%Y-%m-%d_%")}.csv"'
+        #     },
+        # )
+        resp = gera_relatorio_prestador.delay()
+        return Response({"task_id": resp.task_id})
+    else:
+        prestadores = User.objects.all()
+        serializer = PrestadorSerializer(prestadores, many=True)
+        return Response(serializer.data)
 
-    # desativados com o uso do generics
-    # def get(self, request, *args, **kwargs):
-    #     return self.list(request, *args, **kwargs)
 
-    # def post(self, request, *args, **kwargs):
-    #     return self.create(request, *args, **kwargs)
+# desativado para personalizar relatório
+# class PrestadorList(generics.ListAPIView):
+#     serializer_class = PrestadorSerializer
+#     queryset = User.objects.all()
+#     permission_classes = [IsSuperUserOnly]
+
+
+# desativados com o uso do generics
+# def get(self, request, *args, **kwargs):
+#     return self.list(request, *args, **kwargs)
+
+# def post(self, request, *args, **kwargs):
+#     return self.create(request, *args, **kwargs)
 
 
 # agora vamos alterar de mixin para generics
