@@ -130,8 +130,9 @@ def prestador_endereco_create(request, pk):
         return JsonResponse(end_seriado.errors, status=400)
 
 
+# @permission_classes([permissions.IsAdminUser])
 @api_view(http_method_names=["GET"])
-@permission_classes([permissions.IsAdminUser])
+@permission_classes([IsSuperUserOnly])
 def get_relatorio_prestador(request):
     if request.query_params.get("formato") == "csv":
         # response = HttpResponse(

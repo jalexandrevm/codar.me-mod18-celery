@@ -1,9 +1,12 @@
 import csv
 from io import StringIO
+import os
 from django.contrib.auth.models import User
 from agenda.serializers import PrestadorSerializer
 from tamarcado.celery import app
 from django.core.mail import EmailMessage
+import smtplib
+import email.message
 
 
 @app.task
@@ -35,8 +38,8 @@ def gera_relatorio_prestador():
     email_resposta = EmailMessage(
         "Relatório dos Prestadores",
         "Enviando o relatório dos prestadores no seu e-mail.",
-        "no-reply@gente.com",
-        ["voce@gente.com"],
+        os.environ.get("EMAIL_HOST_USER", ""),
+        ["cliente@gente.com"],
     )
     email_resposta.attach("relatorio.csv", output.getvalue(), "text/csv")
     email_resposta.send()

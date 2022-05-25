@@ -170,16 +170,17 @@ LOGGING = {
 }
 
 # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
-)
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "0.0.0.0")
-EMAIL_PORT = os.environ.get("EMAIL_PORT", "1025")
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = os.environ.get("EMAIL_PORT", "")
+
+# usado apenas em produção no settings 'prod.py'
 # EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 # EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+# EMAIL_USE_SSL = True
 
 # para configuração dependente do ambiente usaremos o 'os.environ.get'
 # assim podemos definir em produção a variável 'REDIS_URL'
 # caso não exista será usado a de deving
-# CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
-# CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
+CELERY_BROKER_URL = os.environ.get("REDIS_URL", "")
+CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "")
